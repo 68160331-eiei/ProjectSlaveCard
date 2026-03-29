@@ -1,6 +1,6 @@
 public class Card {
-    private final int rank; // 0=3, 11=A, 12=2
-    private final int suit; // 0=Club, 1=Diamond, 2=Heart, 3=Spade
+    private final int rank;
+    private final int suit;
     private boolean selected = false;
 
     public Card(int rank, int suit) {

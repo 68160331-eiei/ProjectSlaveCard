@@ -17,22 +17,35 @@ abstract class Player {
 
 class AIPlayer extends Player {
     public AIPlayer(String name) { super(name); }
+
     @Override
     public List<Card> play(List<Card> tableCards) {
-        int reqSize = (tableCards == null || tableCards.isEmpty()) ? 1 : tableCards.size();
-        for (int i = 0; i <= hand.size() - reqSize; i++) {
-            List<Card> move = new ArrayList<>(hand.subList(i, i + reqSize));
-            if (SlaveGameEngine.isValidMove(move, tableCards)) {
-                hand.removeAll(move);
-                return move;
+        if (tableCards == null || tableCards.isEmpty()) {
+            // AI strategy: Try to play Triple -> Pair -> Single from lowest rank
+            for (int size = 3; size >= 1; size--) {
+                for (int i = 0; i <= hand.size() - size; i++) {
+                    List<Card> move = new ArrayList<>(hand.subList(i, i + size));
+                    if (SlaveGameEngine.isValidMove(move, tableCards)) {
+                        hand.removeAll(move);
+                        return move;
+                    }
+                }
+            }
+        } else {
+            int reqSize = tableCards.size();
+            for (int i = 0; i <= hand.size() - reqSize; i++) {
+                List<Card> move = new ArrayList<>(hand.subList(i, i + reqSize));
+                if (SlaveGameEngine.isValidMove(move, tableCards)) {
+                    hand.removeAll(move);
+                    return move;
+                }
             }
         }
-        return null; // สู้ไม่ได้
+        return null;
     }
 }
 
 class HumanPlayer extends Player {
     public HumanPlayer(String name) { super(name); }
-    @Override
-    public List<Card> play(List<Card> tableCards) { return null; }
+    @Override public List<Card> play(List<Card> tableCards) { return null; }
 }

@@ -12,7 +12,7 @@ public class GamePanel extends JPanel {
         addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
-                if (frame.getTurn() == 0) handleMouse(e.getX(), e.getY());
+                if (frame.getTurn() == 0 && !frame.isGameOver()) handleMouse(e.getX(), e.getY());
             }
         });
     }
@@ -48,15 +48,17 @@ public class GamePanel extends JPanel {
             drawCard(g2, c, px, c.isSelected() ? 420 : 450); px += 30;
         }
 
-        g2.setFont(new Font("Tahoma", Font.BOLD, 14));
+        g2.setFont(new Font("Arial", Font.BOLD, 14));
         g2.setColor(Color.YELLOW);
-        g2.drawString("Turn: " + frame.getPlayers().get(frame.getTurn()).getName(), 20, 30);
+        String status = frame.isGameOver() ? "GAME OVER!" : "Turn: " + frame.getPlayers().get(frame.getTurn()).getName();
+        g2.drawString(status, 20, 30);
     }
 
     private void drawCard(Graphics2D g2, Card c, int x, int y) {
         g2.setColor(Color.WHITE); g2.fillRoundRect(x, y, 70, 100, 10, 10);
         g2.setColor(Color.BLACK); g2.drawRoundRect(x, y, 70, 100, 10, 10);
-        g2.setColor(c.toString().contains("♥") || c.toString().contains("♦") ? Color.RED : Color.BLACK);
-        g2.drawString(c.toString(), x + 10, y + 55);
+        String str = c.toString();
+        g2.setColor(str.contains("♥") || str.contains("♦") ? Color.RED : Color.BLACK);
+        g2.drawString(str, x + 10, y + 55);
     }
 }

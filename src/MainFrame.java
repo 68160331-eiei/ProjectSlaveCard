@@ -7,13 +7,13 @@ import java.util.stream.Collectors;
 public class MainFrame extends JFrame {
     private List<Player> players = new ArrayList<>();
     private List<Card> tableCards = new ArrayList<>();
-    private int turn = 0;
-    private int lastMover = 0;
+    private int turn = 0, lastMover = 0;
+    private boolean gameOver = false;
     private GamePanel gamePanel;
 
     public MainFrame() {
         initGame();
-        setTitle("Slave 2D Edition");
+        setTitle("Slave 2D - English Version");
         setSize(1000, 650);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         gamePanel = new GamePanel(this);
@@ -24,26 +24,28 @@ public class MainFrame extends JFrame {
         JButton passBtn = new JButton("PASS");
 
         playBtn.addActionListener(e -> {
-            if (turn != 0) return;
+            if (turn != 0 || gameOver) return;
             List<Card> selected = players.get(0).getHand().stream().filter(Card::isSelected).collect(Collectors.toList());
             if (SlaveGameEngine.isValidMove(selected, tableCards)) {
                 tableCards = new ArrayList<>(selected);
                 players.get(0).getHand().removeAll(selected);
                 lastMover = 0;
-                nextTurn();
+                checkWin(players.get(0));
+                if (!gameOver) nextTurn();
             } else {
-                JOptionPane.showMessageDialog(this, "Invalid Move!");
+                JOptionPane.showMessageDialog(this, "Invalid Move! Cards must match in rank and beat the table.");
             }
         });
 
         passBtn.addActionListener(e -> {
-            if (tableCards.isEmpty()) return; // บังคับลงถ้าโต๊ะว่าง
+            if (turn != 0 || gameOver || tableCards.isEmpty()) return;
             players.get(0).setPassed(true);
             nextTurn();
         });
 
         btnPanel.add(playBtn); btnPanel.add(passBtn);
         add(btnPanel, BorderLayout.SOUTH);
+        setLocationRelativeTo(null);
     }
 
     private void initGame() {
@@ -56,39 +58,44 @@ public class MainFrame extends JFrame {
         for (Player p : players) p.sortHand();
     }
 
+    private void checkWin(Player p) {
+        if (p.getHand().isEmpty()) {
+            gameOver = true;
+            gamePanel.repaint();
+            JOptionPane.showMessageDialog(this, "Game Over! Winner: " + p.getName());
+        }
+    }
+
     public void nextTurn() {
+        if (gameOver) return;
         turn = (turn + 1) % 4;
         long activeCount = players.stream().filter(p -> !p.isPassed()).count();
-
-        if (activeCount <= 1) { // ทุกคนผ่านหมด เหลือคนสุดท้าย
+        if (activeCount <= 1) {
             tableCards.clear();
             for (Player p : players) p.setPassed(false);
-            turn = lastMover; // คนลงล่าสุดได้เริ่ม
+            turn = lastMover;
         } else if (players.get(turn).isPassed()) {
-            nextTurn(); // ข้ามคนที่กดผ่านไปแล้ว
-            return;
+            nextTurn(); return;
         }
-
         gamePanel.repaint();
-        if (turn != 0) {
-            javax.swing.Timer timer = new javax.swing.Timer(800, e -> {
+        if (turn != 0 && !gameOver) {
+            new javax.swing.Timer(800, e -> {
                 List<Card> move = players.get(turn).play(tableCards);
                 if (move != null) {
                     tableCards = new ArrayList<>(move);
                     lastMover = turn;
-                } else {
-                    players.get(turn).setPassed(true);
-                }
-                nextTurn();
+                    checkWin(players.get(turn));
+                } else players.get(turn).setPassed(true);
+                if (!gameOver) nextTurn();
                 ((javax.swing.Timer)e.getSource()).stop();
-            });
-            timer.setRepeats(false); timer.start();
+            }).start();
         }
     }
 
     public List<Player> getPlayers() { return players; }
     public List<Card> getTableCards() { return tableCards; }
     public int getTurn() { return turn; }
+    public boolean isGameOver() { return gameOver; }
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> new MainFrame().setVisible(true));
