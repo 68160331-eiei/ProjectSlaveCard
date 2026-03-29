@@ -19,10 +19,7 @@ class AIPlayer extends Player {
     public AIPlayer(String name) { super(name); }
     @Override
     public List<Card> play(List<Card> tableCards) {
-        if (isPassed) return null;
         int reqSize = (tableCards == null || tableCards.isEmpty()) ? 1 : tableCards.size();
-
-        // ค้นหาชุดไพ่ในมือที่ขนาดเท่ากับบนโต๊ะ
         for (int i = 0; i <= hand.size() - reqSize; i++) {
             List<Card> move = new ArrayList<>(hand.subList(i, i + reqSize));
             if (SlaveGameEngine.isValidMove(move, tableCards)) {
@@ -30,8 +27,7 @@ class AIPlayer extends Player {
                 return move;
             }
         }
-        setPassed(true);
-        return null;
+        return null; // สู้ไม่ได้
     }
 }
 

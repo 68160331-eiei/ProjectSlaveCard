@@ -8,11 +8,12 @@ public class MainFrame extends JFrame {
     private List<Player> players = new ArrayList<>();
     private List<Card> tableCards = new ArrayList<>();
     private int turn = 0;
+    private int lastMover = 0;
     private GamePanel gamePanel;
 
     public MainFrame() {
         initGame();
-        setTitle("Slave 2D Edition - English/Thai Supported");
+        setTitle("Slave 2D Edition");
         setSize(1000, 650);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         gamePanel = new GamePanel(this);
@@ -23,18 +24,24 @@ public class MainFrame extends JFrame {
         JButton passBtn = new JButton("PASS");
 
         playBtn.addActionListener(e -> {
+            if (turn != 0) return;
             List<Card> selected = players.get(0).getHand().stream().filter(Card::isSelected).collect(Collectors.toList());
             if (SlaveGameEngine.isValidMove(selected, tableCards)) {
                 tableCards = new ArrayList<>(selected);
                 players.get(0).getHand().removeAll(selected);
-                for(Card c : players.get(0).getHand()) c.setSelected(false);
+                lastMover = 0;
                 nextTurn();
             } else {
-                JOptionPane.showMessageDialog(this, "Invalid Move! Cards must match in rank and beat the table.");
+                JOptionPane.showMessageDialog(this, "Invalid Move!");
             }
         });
 
-        passBtn.addActionListener(e -> { players.get(0).setPassed(true); nextTurn(); });
+        passBtn.addActionListener(e -> {
+            if (tableCards.isEmpty()) return; // บังคับลงถ้าโต๊ะว่าง
+            players.get(0).setPassed(true);
+            nextTurn();
+        });
+
         btnPanel.add(playBtn); btnPanel.add(passBtn);
         add(btnPanel, BorderLayout.SOUTH);
     }
@@ -51,16 +58,27 @@ public class MainFrame extends JFrame {
 
     public void nextTurn() {
         turn = (turn + 1) % 4;
-        long active = players.stream().filter(p -> !p.isPassed()).count();
-        if (active <= 1 && players.get(turn).isPassed()) {
+        long activeCount = players.stream().filter(p -> !p.isPassed()).count();
+
+        if (activeCount <= 1) { // ทุกคนผ่านหมด เหลือคนสุดท้าย
             tableCards.clear();
             for (Player p : players) p.setPassed(false);
+            turn = lastMover; // คนลงล่าสุดได้เริ่ม
+        } else if (players.get(turn).isPassed()) {
+            nextTurn(); // ข้ามคนที่กดผ่านไปแล้ว
+            return;
         }
+
         gamePanel.repaint();
         if (turn != 0) {
-            javax.swing.Timer timer = new javax.swing.Timer(1000, e -> {
+            javax.swing.Timer timer = new javax.swing.Timer(800, e -> {
                 List<Card> move = players.get(turn).play(tableCards);
-                if (move != null) tableCards = new ArrayList<>(move);
+                if (move != null) {
+                    tableCards = new ArrayList<>(move);
+                    lastMover = turn;
+                } else {
+                    players.get(turn).setPassed(true);
+                }
                 nextTurn();
                 ((javax.swing.Timer)e.getSource()).stop();
             });
